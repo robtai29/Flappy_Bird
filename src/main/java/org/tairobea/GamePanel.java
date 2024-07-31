@@ -1,14 +1,13 @@
 package org.tairobea;
 
 import javax.swing.*;
+import javax.swing.Timer;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
-import java.util.ArrayList;
-import java.util.Objects;
-import java.util.Random;
+import java.util.*;
 
 public class GamePanel extends JPanel implements ActionListener, KeyListener {
 
@@ -32,8 +31,9 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
     int pipeY = 0;
     int pipeWidth = 64;
     int pipeHeight = 512;
+    int score = 0;
 
-    ArrayList<Pipe> pipes;
+    LinkedList<Pipe> pipes;
 
     Timer gameLoop;
     Timer placePipesTimer;
@@ -52,7 +52,7 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         bottomPipeImg = new ImageIcon(Objects.requireNonNull(getClass().getResource("/images/bottompipe.png"))).getImage();
         backgroundImg = new ImageIcon(Objects.requireNonNull(getClass().getResource("/images/flappybirdbg.png"))).getImage();
         bird = new Bird(birdX, birdY, birdWidth, birdHeight, birdImg);
-        pipes = new ArrayList<>();
+        pipes = new LinkedList<>();
         random = new Random();
 
         placePipesTimer = new Timer(1500, new ActionListener() {
@@ -71,6 +71,18 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         drawBackground(g);
         drawBird(g);
         drawPipes(g);
+        drawScore(g);
+    }
+
+    private void drawScore(Graphics g){
+        g.setColor(Color.BLACK);
+        g.setFont(new Font("Arial", Font.BOLD, 32));
+
+        if (!gameOver){
+            g.drawString("Score: " + String.valueOf(score), 20, 20);
+        }else{
+            g.drawString("Gameover", 100, 20);
+        }
     }
 
     private void drawPipes(Graphics g) {
@@ -80,7 +92,6 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
     }
 
     private void move(){
-        System.out.println("meow");
         velocity += gravity;
         int birdPosY = Math.max(bird.getY() + velocity, 0);
         bird.setY(birdPosY);
@@ -90,11 +101,21 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
             if (collision(bird, pipe)){
                 gameOver = true;
             }
+
+            if (pipe.getX() + pipeWidth <= bird.getX()){
+                if (!pipe.isPassed()){
+                    score += 10;
+                }
+                pipe.setPassed(true);
+            }
         }
 
         if (bird.getY() > boardHeight){
             gameOver = true;
         }
+
+        pipes.removeIf(pipe -> pipe.getX() + pipeWidth <= 0);
+
     }
 
     public boolean collision(Bird a,  Pipe b){
